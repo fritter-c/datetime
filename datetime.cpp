@@ -4,30 +4,35 @@ namespace gtr {
 /**
  * Months abbreviation
  */
-    static const char *datetime_month_abrev[]{"Jan", "Feb", "Mar", "Apr",
-                                              "May", "Jun", "Jul", "Aug",
-                                              "Sep", "Oct", "Nov", "Dec"};
-    static const int char_sum[] = {
-        281,  // Jan
-        269,  // Feb
-        288,  // Mar
-        291,  // Apr
-        295,  // May
-        301,  // Jun
-        299,  // Jul
-        401,  // Aug
-        296,  // Sep
-        294,  // Oct
-        307,  // Nov
-        268   // Dec
-    };
+    constexpr const char *datetime_month_abbrev[]{"Jan", "Feb", "Mar", "Apr",
+                                                  "May", "Jun", "Jul", "Aug",
+                                                  "Sep", "Oct", "Nov", "Dec"};
 
-    static inline bool
-    is_alpha(const char c){
-        return (c >= '0' && c <= '9');
-    }
-    static inline
+    constexpr inline static bool
+    is_alpha(const char c){return (c >= '0' && c <= '9');}
+
+/**
+* For fasting parsing.
+* @param sum of chars in the month abbreviation
+* @return return the month 1-indexed
+* @note: NOT SAFE for uncontrolled inputs
+*/
+    constexpr inline static
     int get_month_from_sum(int sum){
+        constexpr const int char_sum[] = {
+            281,  // Jan
+            269,  // Feb
+            288,  // Mar
+            291,  // Apr
+            295,  // May
+            301,  // Jun
+            299,  // Jul
+            401,  // Aug
+            296,  // Sep
+            294,  // Oct
+            307,  // Nov
+            268   // Dec
+        };
         int month = 1;
         while(char_sum[month - 1] != sum) month++;
         return month;
@@ -38,7 +43,7 @@ namespace gtr {
  * @param n The year
  * @return The number of digits or -1 if mod(n) > 999999
  */
-    static inline constexpr int
+    constexpr inline static int
     datetime_year_digits(int n){
         if (n < 0) n = -n;
         if (n < 10) return 1;
@@ -68,7 +73,7 @@ namespace gtr {
  * @param dest Destination string
  * @param data Source string
  */
-    static inline constexpr void
+    inline static void
     string_copy(char* dest, const char* data){
         do{*dest++ = *data;}while(*data++ != '\0');
     }
@@ -80,7 +85,7 @@ namespace gtr {
  * @param number Integer positive number
  * @attention dest should support 4 + 1 char
  */
-    static inline constexpr void
+    static inline void
     put_positive_number(char *dest, int digits,int number) {
         *(dest += digits) = '\0'; 
         for(int i= 0; i < digits; i++) {*--dest = (number % 10) + '0'; number /= 10;}
@@ -93,7 +98,7 @@ namespace gtr {
  * @param number Integer negative number
  * @attention dest should support 4 + 2 char
  */
-    static inline constexpr void
+    static inline void
     put_negative_number(char * dest, int digits, int number){
         *(dest+= digits +1) = '\0';
         number = -number;
@@ -225,7 +230,7 @@ namespace gtr {
                     break;
                 case 'M':
                     if (*(state + 1) == 'M' && *(state + 2) == 'M'){
-                        string_copy(out_ptr, datetime_month_abrev[month -1]);
+                        string_copy(out_ptr, datetime_month_abbrev[month -1]);
                         state+= 3;
                         out_ptr += 3;
                     }   
@@ -243,7 +248,7 @@ namespace gtr {
                 case 'Y':
                     // Puts only 4 signed digits years (useful from 9999BC to 9999AC)
                     if (*(state + 1) == 'Y' && *(state + 2) == 'Y' && *(state + 3) == 'Y') {
-                        if (year >= 0)[[likely]]{
+                        if (year >= 0){
                             put_positive_number(out_ptr, 4, year);
                             out_ptr += 4;
                         }
@@ -251,13 +256,12 @@ namespace gtr {
                             put_negative_number(out_ptr, 4, year);
                             out_ptr += 5;
                         }
-                        state += 4;
-                
+                        state += 4;            
                     }
                     //Puts only 2 signed digits
                     else if (*(state + 1) == 'Y'){
                         int year_format = year % 100;
-                        if (year_format >= 0)[[likely]]{
+                        if (year_format >= 0){
                             put_positive_number(out_ptr, 2, year_format);
                             out_ptr += 2;
                         }
@@ -270,7 +274,7 @@ namespace gtr {
                     // Puts the whole signed number
                     else if (*(state + 1) == 'F'){
                         int digits = datetime_year_digits(year);
-                        if (year > 0) [[likely]]
+                        if (year > 0) 
                             put_positive_number(out_ptr, digits, year);
                         else
                             put_negative_number(out_ptr, digits++, year);
@@ -456,7 +460,6 @@ namespace gtr {
             days -= current_year_lenght;
             current_year_lenght = year_lenght_in_days(++current_year);
         }
-
         data += days * 86400 * 1000000LL;
     }
     

@@ -1,8 +1,8 @@
 #ifndef GTR_DATETIME_H
 #define GTR_DATETIME_H
 
-#define DATETIME_DEFAULT_FORMAT "DD/MM/YYYY hh:mm:ss"
-#define DATETIME_INVALID -9223372036854775807LL - 1LL
+constexpr auto DATETIME_DEFAULT_FORMAT = "DD/MM/YYYY hh:mm:ss";
+constexpr auto DATETIME_INVALID = -9223372036854775807LL - 1LL;
 
 namespace gtr{
     enum class date_format{
@@ -122,8 +122,7 @@ namespace gtr{
 
         void
         add_years(int years);
-
-        
+   
         inline bool
         operator==(datetime other){return data == other.data;}
 
@@ -146,13 +145,13 @@ namespace gtr{
         operator+(datetime other){return data + other.data;}
 
         inline datetime
-        operator+=(datetime other){return operator+(other);}
+        operator+=(datetime other) { data += other.data; return *this; }
 
         inline datetime
         operator-(datetime other){return data - other.data;}
 
         inline datetime
-        operator-=(datetime other){return operator-(other);}
+        operator-=(datetime other) { data -= other.data; return *this; }
     };
 };
 #endif
