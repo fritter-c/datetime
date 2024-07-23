@@ -75,7 +75,7 @@ namespace gtr {
  */
     inline static void
     string_copy(char* dest, const char* data){
-        do{*dest++ = *data;}while(*data++ != '\0');
+        do{*dest++ = *data++;}while(*data != '\0');
     }
 
 /**
