@@ -1,14 +1,14 @@
 #ifndef GTR_DATETIME_H
 #define GTR_DATETIME_H
-
 constexpr auto DATETIME_DEFAULT_FORMAT = "DD/MM/YYYY hh:mm:ss";
 constexpr auto DATETIME_INVALID = -9223372036854775807LL - 1LL;
 
 namespace gtr{
     enum class date_format{
         text_date,
-        iso_date};
-    
+        iso_date
+    };
+
     struct datetime_pack{
         int year;
         unsigned char month;
@@ -18,7 +18,7 @@ namespace gtr{
         unsigned char minute;
         unsigned char second;
 
-        unsigned int microsecond;
+        int microsecond;
     };
     
     struct datetime{
@@ -102,6 +102,6 @@ namespace gtr{
 
         inline datetime
         operator-=(datetime other) {data -= other.data; return *this; }
-    };
+    };  
 };
 #endif

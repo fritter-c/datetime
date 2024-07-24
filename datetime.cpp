@@ -1,6 +1,7 @@
 #include "datetime.h"
 
 namespace gtr {
+    
 /**
  * Months abbreviation
  */
@@ -68,7 +69,7 @@ namespace gtr {
         return result;
     }
 
-/**
+/*
  * strcpy implementation
  * @param dest Destination string
  * @param data Source string
