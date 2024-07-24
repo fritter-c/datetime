@@ -86,9 +86,9 @@ namespace gtr {
  * @attention dest should support 4 + 1 char
  */
     static inline void
-    put_positive_number(char *dest, int digits,int number) {
+    put_positive_number(char *dest,const unsigned int digits,int number) {
         *(dest += digits) = '\0'; 
-        for(int i= 0; i < digits; i++) {*--dest = (number % 10) + '0'; number /= 10;}
+        for(unsigned int i= 0; i < digits; i++) {*--dest = (number % 10) + '0'; number /= 10;}
     }
 
 /**
@@ -99,10 +99,10 @@ namespace gtr {
  * @attention dest should support 4 + 2 char
  */
     static inline void
-    put_negative_number(char * dest, int digits, int number){
+    put_negative_number(char * dest, const unsigned int digits, int number){
         *(dest+= digits +1) = '\0';
         number = -number;
-        for(int i= 0; i < digits; i++) {*--dest = (number % 10) + '0'; number /= 10;}
+        for(unsigned int i= 0; i < digits; i++) {*--dest = (number % 10) + '0'; number /= 10;}
         *--dest = '-';
     }
     constexpr unsigned int g_monthdays[13] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
@@ -111,9 +111,6 @@ namespace gtr {
     static inline constexpr bool
     is_leap_year(const int year){return ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0));}
 
-    static inline constexpr int
-    year_lenght_in_days(const int year){return is_leap_year(year) ? g_lpmonthdays[12] : g_monthdays[12];}
-    
     static inline constexpr unsigned int
     days_until_month(const int year,const int month){return (is_leap_year(year) ? g_lpmonthdays[month -1] : g_monthdays[month -1]);}
 
@@ -123,8 +120,8 @@ namespace gtr {
                         const int minute, const int second) {
 
         //  Reference https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04
-        int day_corrected = days_until_month(year, month) + day - 1;
-        int year_corrected = year - 1900;
+        unsigned int day_corrected = days_until_month(year, month) + day - 1;
+        unsigned int year_corrected = year - 1900;
         return second + minute * 60 + hour * 3600 + day_corrected * 86400 +
             (year_corrected - 70) * 31536000 +
             ((year_corrected - 69)/4)*86400 -
@@ -248,7 +245,7 @@ namespace gtr {
                 case 'Y':
                     // Puts only 4 signed digits years (useful from 9999BC to 9999AC)
                     if (*(state + 1) == 'Y' && *(state + 2) == 'Y' && *(state + 3) == 'Y') {
-                        if (year >= 0){
+                        if (year >= 0)[[likely]]{
                             put_positive_number(out_ptr, 4, year);
                             out_ptr += 4;
                         }
@@ -261,7 +258,7 @@ namespace gtr {
                     //Puts only 2 signed digits
                     else if (*(state + 1) == 'Y'){
                         int year_format = year % 100;
-                        if (year_format >= 0){
+                        if (year_format >= 0)[[likely]]{
                             put_positive_number(out_ptr, 2, year_format);
                             out_ptr += 2;
                         }
@@ -274,7 +271,7 @@ namespace gtr {
                     // Puts the whole signed number
                     else if (*(state + 1) == 'F'){
                         int digits = datetime_year_digits(year);
-                        if (year > 0) 
+                        if (year > 0) [[likely]]
                             put_positive_number(out_ptr, digits, year);
                         else
                             put_negative_number(out_ptr, digits++, year);
@@ -347,7 +344,7 @@ namespace gtr {
         if (group_format == date_format::text_date){
             while(*state != '\0'){
                 char buffer[8];
-                int index = 0;
+                unsigned int index = 0;
                 char init_state = *state;
                 int* result = &day;
                 bool separator = false;
@@ -441,43 +438,24 @@ namespace gtr {
     }
     
     void
-    datetime::add_days(int days)
-    {
-        datetime_pack pack;
-        to_pack(pack);
-        int current_year = pack.year;
-        int current_year_day =  days_until_month(pack.year, pack.month) + pack.day - 1;
-        int current_year_lenght = year_lenght_in_days(pack.year);
-        if (current_year_day + days >= current_year_lenght){
-            add_years(1);
-            days -= (current_year_lenght - current_year_day);
-            current_year_lenght = year_lenght_in_days(++current_year);
-        }
-
-        //Probably there is a faster way to do that but I'm not really smart
-        while(days >= current_year_lenght){
-            add_years(1);
-            days -= current_year_lenght;
-            current_year_lenght = year_lenght_in_days(++current_year);
-        }
-        data += days * 86400 * 1000000LL;
-    }
-    
-    void
     datetime::add_months(int months)
     {
         datetime_pack pack;
-        to_pack(pack);
-        pack.month += months;
+        to_pack(pack);        
+        const int new_month = pack.month + months;
+        constexpr int february_in_leap = 29;
 
-        if (pack.month > 12)
-            add_years(pack.month / 12);
-
-        pack.month %= 12;
-        // Handle day overflow (e.g., adding one month to January 31 should result in February 28/29)
+        if (new_month > 12){
+            pack.year = pack.year + new_month / 12;
+            pack.month = new_month % 12  == 0 ? 1 : new_month % 12;   
+        }
+        else{
+            pack.month = new_month;
+        }
+        
         static int days_in_month[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-        if ((pack.year % 4 == 0 && pack.year % 100 != 0) || (pack.year % 400 == 0)) {
-            days_in_month[1] = 29;  // February in a leap year
+        if (is_leap_year(pack.year)) {
+            days_in_month[1] = february_in_leap;  // February in a leap year
         }
         if (pack.day > days_in_month[pack.month - 1]) {
             pack.day = days_in_month[pack.month - 1];
