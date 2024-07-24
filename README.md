@@ -11,3 +11,24 @@ The string parsers are NOT SAFE, so external inputs are not verified for consist
 
 Warning:
   This library is still under developement and testing. Be mindful when using it in critical systems
+
+PERFECT PARSER
+
+  A utility to parse string datetime if you know the format at compile time, this could be useful to parse large files faster 
+
+  - Example "YYYY-MM-DD hh:mm:ss.zzzzzz"
+
+        datetime other = perfect_parser<year_field,
+                                   separator_field<1>,
+                                   month_field,
+                                   separator_field<1>,
+                                   day_field,
+                                   separator_field<1>,
+                                   hour_field,
+                                   separator_field<1>,
+                                   minute_field,
+                                   separator_field<1>,
+                                   second_field,
+                                   separator_field<1>,
+                                   microsecond_field<6>>::parse_datetime(datetime_string);
+  
