@@ -129,7 +129,7 @@ namespace gtr {
     }
 
     static long long
-    parse_datetime_string(const char * __restrict date, const char * __restrict format, date_format group_format = date_format::text_date) {
+    parse_datetime_string(const char * date, const char * format, date_format group_format = date_format::text_date) {
         const char* state = format;
         const char* date_char = date;
         datetime_pack pack{};
