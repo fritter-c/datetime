@@ -20,7 +20,7 @@ PERFECT PARSER
 
         datetime other = perfect_parser<year_field,
                                    separator_field<1>,
-                                   month_field,
+                                   month_field<>,
                                    separator_field<1>,
                                    day_field,
                                    separator_field<1>,
@@ -30,5 +30,7 @@ PERFECT PARSER
                                    separator_field<1>,
                                    second_field,
                                    separator_field<1>,
-                                   microsecond_field<6>>::parse_datetime(datetime_string);
+                                   microsecond_field<>::parse_datetime(datetime_string);
   
+
+This will create a function that executes the correct parsing instructions in the correct order(year, separator, month...) so a swicth statement is no longer necessary resulting in less branches and state verification.
