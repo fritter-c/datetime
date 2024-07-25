@@ -122,7 +122,7 @@ namespace gtr {
                 default:separator_field<1>::puts(&state, &out_ptr, pack);break;
                 }
             }
-            *out_ptr = '\0';
+            _END_STRING(out_ptr);
             return true;
         }
         return datetime_to_string(date, out, "YYYY-MM-DDThh:mm:ss+00:00", date_format::text_date);

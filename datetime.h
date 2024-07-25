@@ -174,7 +174,7 @@ namespace gtr{
             if (*(++*format) == 'Y'){
                 // Four digits
                 if (*(++*format) == 'Y'){
-                    ++*format;
+                    *format+=2;
                     datetime_puts_integer(*out, 4, pack.year);
                     *out+= 4  + (pack.year < 0);
                 }
@@ -332,10 +332,24 @@ namespace gtr{
             parse_impl(&state, pack);
             return datetime{pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second, pack.microsecond};           
         }
+
+        static void put_datetime(datetime date, const char* format, char* out)
+        {
+            datetime_pack pack;
+            date.to_pack(pack);
+            const char* state = format;
+            char* out_ptr = out;
+            put_impl(&state, &out_ptr, pack);
+            _END_STRING(out_ptr);
+        }
         private:
         static void parse_impl(const char** state, datetime_pack& pack)
         {
             ((void)Args{}.parse(state, pack), ...);
+        }
+        static void put_impl(const char** format, char**out, datetime_pack& pack)
+        {
+            (Args{}.puts(format, out, pack),...);
         }
     };
 #endif //DATETIME_PERFERCT_PARSER
