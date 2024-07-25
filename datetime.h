@@ -127,6 +127,27 @@ namespace gtr{
 
         void
         add_years(int years);
+
+        int
+        day();
+
+        int
+        month();
+
+        int
+        year();
+
+        int
+        second();
+
+        int
+        minute();
+
+        int
+        hour();
+
+        int
+        microsecond();
    
         inline bool
         operator==(datetime other){return data == other.data;}

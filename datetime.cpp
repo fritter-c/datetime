@@ -210,6 +210,14 @@ namespace gtr {
         datetime_pack pack;
         to_pack(pack);
         pack.year += years;
+        constexpr int february_in_leap = 29;
+        static int days_in_month[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+        if (is_leap_year(pack.year)) {
+            days_in_month[1] = february_in_leap;  // February in a leap year
+        }
+        if (pack.day > days_in_month[pack.month - 1]) {
+            pack.day = days_in_month[pack.month - 1];
+        }
         *this = datetime(pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second, pack.microsecond); 
     }
     
@@ -217,5 +225,62 @@ namespace gtr {
     datetime::to_pack(datetime_pack& pack) const
     {
         epoch_to_datetime_pack(data, pack);
+    }
+
+    int
+    datetime::day()
+    {
+        datetime_pack pack;
+        epoch_to_datetime_pack(data, pack);
+        return pack.day;
+    }
+    
+    int
+    datetime::month()
+    {
+        datetime_pack pack;
+        epoch_to_datetime_pack(data, pack);
+        return pack.month;
+    }
+    
+    int
+    datetime::year()
+    {
+        datetime_pack pack;
+        epoch_to_datetime_pack(data, pack);
+        return pack.year;
+    }
+
+    int
+    datetime::second()
+    {
+        datetime_pack pack;
+        epoch_to_datetime_pack(data, pack);
+        return pack.second;
+    }
+    
+    int
+    datetime::minute()
+    {
+        datetime_pack pack;
+        epoch_to_datetime_pack(data, pack);
+        return pack.minute;
+    }
+
+    int
+    datetime::hour()
+    {
+        datetime_pack pack;
+        epoch_to_datetime_pack(data, pack);
+        return pack.hour;
+    }
+
+    int
+    datetime::microsecond()
+    {
+        datetime_pack pack;
+        epoch_to_datetime_pack(data, pack);
+        return pack.microsecond;
+        
     }
 };
