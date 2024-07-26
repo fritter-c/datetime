@@ -16,25 +16,25 @@ The string parsers are NOT SAFE, so external inputs are not verified for consist
 Warning:
   This library is still under developement and testing. Be mindful when using it in critical systems
 
-PERFECT PARSER
+# perfect_parser
 
   A utility to parse string datetime if you know the format at compile time, this could be useful to parse large files faster 
 
   - Example "YYYY-MM-DD hh:mm:ss.zzzzzz"
 
         datetime other = perfect_parser<year_field,
-                                   separator_field<1>,
-                                   month_field<>,
-                                   separator_field<1>,
-                                   day_field,
-                                   separator_field<1>,
-                                   hour_field,
-                                   separator_field<1>,
-                                   minute_field,
-                                   separator_field<1>,
-                                   second_field,
-                                   separator_field<1>,
-                                   microsecond_field<>::parse_datetime(datetime_string);
+                                        separator_field<1>,
+                                        month_field<>,
+                                        separator_field<1>,
+                                        day_field,
+                                        separator_field<1>,
+                                        hour_field,
+                                        separator_field<1>,
+                                        minute_field,
+                                        separator_field<1>,
+                                        second_field,
+                                        separator_field<1>,
+                                        microsecond_field<>::parse_datetime(datetime_string);
   
 
 This will create a function that executes the correct parsing instructions in the correct order(year, separator, month...) so a swicth statement is no longer necessary resulting in less branches and state verification.
