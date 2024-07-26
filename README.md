@@ -5,6 +5,10 @@ This is a datetime library that wraps POSIX time. It does not use any c++ nor c 
 
 This library does not account for leap seconds and datetime ALWAYS holds a timestamp UTC+00:00. 
 
+When manipulating time (e.g. adding months, years) sometimes impossible dates can be reached for example if you are on January 31 and add one month, the date would be "February 31" which is not a real date. In these cases
+the library always correct down the days and the add month operation would result in February 28 in a non-leap year or February 29 in a leap-year. So, in a nutshell, when adding or subtracting years or months, be aware that
+datetime can correct down the day if it extrapolates the limit to fit the new month.
+
 Unlike C-like time functions, this class operates with a precision of microseconds so the maximum years it can holds are +/- 290,000
 
 The string parsers are NOT SAFE, so external inputs are not verified for consistency. Always use in-code format strings and date input strings, verify your datetime source (e.g. your .csv) or code a safe version yourself
