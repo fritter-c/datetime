@@ -1,14 +1,12 @@
 #include "datetime.h"
+#define _IS_LEAP_YEAR(Y) (((Y) % 4 == 0 && (Y) % 100 != 0) || (Y % 400 == 0))
 
 namespace gtr {
-    constexpr unsigned int g_monthdays[13] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
-    constexpr unsigned int g_lpmonthdays[13] = {0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366};
-
-    static inline constexpr bool
-    is_leap_year(const int year){return ((year % 4 == 0 && year % 100 != 0) || (year % 400 == 0));}
+    constexpr unsigned int monthdays[13] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
+    constexpr int days_in_month[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
     static inline constexpr unsigned int
-    days_until_month(const int year,const int month){return (is_leap_year(year) ? g_lpmonthdays[month -1] : g_monthdays[month -1]);}
+    days_until_month(const int year,const int month){return (_IS_LEAP_YEAR(year) ? monthdays[month -1] + (month > 1): monthdays[month - 1]);}
 
     static inline constexpr long long
     seconds_since_epoch(const int day, const int month,
@@ -192,15 +190,12 @@ namespace gtr {
         else{
             pack.month = new_month;
         }
-        
-        static int days_in_month[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-        if (is_leap_year(pack.year)) {
-            days_in_month[1] = february_in_leap;  // February in a leap year
-        }
         if (pack.day > days_in_month[pack.month - 1]) {
             pack.day = days_in_month[pack.month - 1];
+        }      
+        if (_IS_LEAP_YEAR(pack.year) && pack.month == 2) {
+            pack.day = february_in_leap;  // February in a leap year
         }
-
         *this = datetime(pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second, pack.microsecond);
     }
 
@@ -211,12 +206,11 @@ namespace gtr {
         to_pack(pack);
         pack.year += years;
         constexpr int february_in_leap = 29;
-        static int days_in_month[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
-        if (is_leap_year(pack.year)) {
-            days_in_month[1] = february_in_leap;  // February in a leap year
-        }
         if (pack.day > days_in_month[pack.month - 1]) {
             pack.day = days_in_month[pack.month - 1];
+        }      
+        if (_IS_LEAP_YEAR(pack.year) && pack.month == 2) {
+            pack.day = february_in_leap;  // February in a leap year
         }
         *this = datetime(pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second, pack.microsecond); 
     }
@@ -228,7 +222,7 @@ namespace gtr {
     }
 
     int
-    datetime::day()
+    datetime::day() const
     {
         datetime_pack pack;
         epoch_to_datetime_pack(data, pack);
@@ -236,7 +230,7 @@ namespace gtr {
     }
     
     int
-    datetime::month()
+    datetime::month() const
     {
         datetime_pack pack;
         epoch_to_datetime_pack(data, pack);
@@ -244,7 +238,7 @@ namespace gtr {
     }
     
     int
-    datetime::year()
+    datetime::year() const
     {
         datetime_pack pack;
         epoch_to_datetime_pack(data, pack);
@@ -252,7 +246,7 @@ namespace gtr {
     }
 
     int
-    datetime::second()
+    datetime::second() const
     {
         datetime_pack pack;
         epoch_to_datetime_pack(data, pack);
@@ -260,7 +254,7 @@ namespace gtr {
     }
     
     int
-    datetime::minute()
+    datetime::minute() const
     {
         datetime_pack pack;
         epoch_to_datetime_pack(data, pack);
@@ -268,7 +262,7 @@ namespace gtr {
     }
 
     int
-    datetime::hour()
+    datetime::hour() const
     {
         datetime_pack pack;
         epoch_to_datetime_pack(data, pack);
@@ -276,7 +270,7 @@ namespace gtr {
     }
 
     int
-    datetime::microsecond()
+    datetime::microsecond() const
     {
         datetime_pack pack;
         epoch_to_datetime_pack(data, pack);

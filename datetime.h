@@ -1,5 +1,6 @@
 #ifndef GTR_DATETIME_H
 #define GTR_DATETIME_H
+
 constexpr auto DATETIME_DEFAULT_FORMAT = "DD/MM/YYYY hh:mm:ss";
 constexpr auto DATETIME_INVALID = -9223372036854775807LL - 1LL;
 #define _IS_ALPHA(A) ((((A) >= '0') && ((A) <= '9')))
@@ -9,50 +10,6 @@ namespace gtr{
     constexpr const char *datetime_month_abbrev[]{"Jan", "Feb", "Mar", "Apr",
                                                   "May", "Jun", "Jul", "Aug",
                                                   "Sep", "Oct", "Nov", "Dec"};
-
-    static inline int
-    datetime_get_month_from_sum(int sum){
-        static const int char_sum[] = {281,269,288,291,295,301,299,401,296,294,307,268};
-        int month = 1;
-        while(char_sum[month - 1] != sum) month++;
-        return month;
-    }
-
-    static inline void
-    datetime_strcpy(char* dest, const char* source){do{*dest++ = *source++;}while(*source != '\0');}
-
-    static inline long long
-    datetime_atoi(const char* buffer){
-        bool neg = false;
-        if (buffer[0] == '-'){
-            neg = true;
-            buffer++;
-        }
-        long long value = 0;
-        while(*buffer != '\0' && _IS_ALPHA(*buffer)) value = value * 10 + *buffer++ - '0';
-        return neg ? -value : value;
-    }
-
-    inline constexpr int
-    datetime_digits(int number){
-        if (number < 0) number = -number;
-        if (number < 10) return 1;
-        if (number < 100) return 2;
-        if (number < 1000) return 3;
-        if (number < 10000) return 4;
-        if (number < 100000) return 5;
-        if (number < 1000000) return 6;
-        return -1;
-    }
-
-    static inline void
-    datetime_puts_integer(char* dest, int digits, int number){
-        int neg = number < 0;
-        *(dest+= digits + neg) = '\0';
-        number = neg ? -number : number;
-        while(digits--) {*--dest = (number % 10) + '0'; number /= 10;}
-        if (neg) *--dest =  '-';
-    }
 
     enum class date_format{
         text_date,
@@ -129,57 +86,101 @@ namespace gtr{
         add_years(int years);
 
         int
-        day();
+        day() const;
 
         int
-        month();
+        month() const;
 
         int
-        year();
+        year() const;
 
         int
-        second();
+        second() const;
 
         int
-        minute();
+        minute() const;
 
         int
-        hour();
+        hour() const;
 
         int
-        microsecond();
+        microsecond() const;
    
         inline bool
-        operator==(datetime other){return data == other.data;}
+        operator==(datetime other) const{return data == other.data;}
 
         inline bool
-        operator!=(datetime other){return data != other.data;}
+        operator!=(datetime other) const{return data != other.data;}
 
         inline bool
-        operator>(datetime other){return data > other.data;}
+        operator>(datetime other) const{return data > other.data;}
 
         inline bool
-        operator<(datetime other){return data < other.data;}
+        operator<(datetime other) const{return data < other.data;}
 
         inline bool
-        operator>=(datetime other){return data >= other.data;}
+        operator>=(datetime other) const{return data >= other.data;}
 
         inline bool
-        operator<=(datetime other){return data <= other.data;}
+        operator<=(datetime other) const{return data <= other.data;}
 
         inline datetime
-        operator+(datetime other){return data + other.data;}
+        operator+(datetime other) const{return data + other.data;}
 
         inline datetime
         operator+=(datetime other){data += other.data; return *this; }
 
         inline datetime
-        operator-(datetime other){return data - other.data;}
+        operator-(datetime other) const{return data - other.data;}
 
         inline datetime
         operator-=(datetime other) {data -= other.data; return *this; }
         
     };
+    
+    inline int
+    datetime_get_month_from_sum(int sum){
+        constexpr const int char_sum[] = {281,269,288,291,295,301,299,401,296,294,307,268};
+        int month = 1;
+        while(char_sum[month - 1] != sum) month++;
+        return month;
+    }
+
+    inline void
+    datetime_strcpy(char* dest, const char* source){do{*dest++ = *source++;}while(*source != '\0');}
+
+    inline long long
+    datetime_atoi(const char* buffer){
+        bool neg = false;
+        if (buffer[0] == '-'){
+            neg = true;
+            buffer++;
+        }
+        long long value = 0;
+        while(*buffer != '\0' && _IS_ALPHA(*buffer)) value = value * 10 + *buffer++ - '0';
+        return neg ? -value : value;
+    }
+
+    constexpr int
+    datetime_digits(int number){
+        if (number < 0) number = -number;
+        if (number < 10) return 1;
+        if (number < 100) return 2;
+        if (number < 1000) return 3;
+        if (number < 10000) return 4;
+        if (number < 100000) return 5;
+        if (number < 1000000) return 6;
+        return -1;
+    }
+
+    inline void
+    datetime_puts_integer(char* dest, int digits, int number){
+        bool neg = number < 0;
+        *(dest+= digits + neg) = '\0';
+        number = neg ? -number : number;
+        while(digits--) {*--dest = (number % 10) + '0'; number /= 10;}
+        if (neg) *--dest =  '-';
+    }
     
     struct year_field{
         static inline int parse(const char** state, datetime_pack& pack){
@@ -262,8 +263,7 @@ namespace gtr{
                 *format+=2;
                 *out+=2;
             }
-        }
-        
+        }       
     };
 
     struct hour_field{
@@ -373,6 +373,11 @@ namespace gtr{
             (Args{}.puts(format, out, pack),...);
         }
     };
+
+    // Parses DD/MM/YYYY hh:mm:ss
+    using perfect_parser_default = perfect_parser<day_field, separator_field<>, month_field<>, separator_field<>,
+                                                  year_field, separator_field<>, hour_field, separator_field<>,
+                                                  minute_field, separator_field<>, second_field>;
 #endif //DATETIME_PERFERCT_PARSER
 };
 #endif
