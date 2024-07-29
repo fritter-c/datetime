@@ -11,6 +11,8 @@ datetime can correct down the day if it extrapolates the limit to fit the new mo
 
 Unlike C-like time functions, this class operates with a precision of microseconds so the maximum years it can holds are +/- 290,000
 
+The string parsers CURRENTLY work ONLY with positive years (1 - 290000)
+
 The string parsers are NOT SAFE, so external inputs are not verified for consistency. Always use in-code format strings and date input strings, verify your datetime source (e.g. your .csv) or code a safe version yourself
 
 Do not use datetime string functions(atoi, strcpy...) for anything else. They're adapted to be used within the datetime library and do not serve as a replacement for CRT default ones.
