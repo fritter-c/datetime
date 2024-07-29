@@ -8,20 +8,12 @@ namespace gtr {
     static inline constexpr unsigned int
     days_until_month(const int year,const int month){return (_IS_LEAP_YEAR(year) ? monthdays[month -1] + (month > 1): monthdays[month - 1]);}
 
-    static inline constexpr long long
-    seconds_since_epoch(const int day, const int month,
-                        const int year, const int hour,
-                        const int minute, const int second) {
-
-        // Reference https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04
-        unsigned int day_corrected = days_until_month(year, month > 0 && month <= 12 ? month : 12) + day - 1;
-        unsigned int year_corrected = year - 1900;
-        return second + minute * 60 + hour * 3600 + day_corrected * 86400 +
-            (year_corrected - 70) * 31536000 +
-            ((year_corrected - 69)/4)*86400 -
-            ((year_corrected - 1)/100)*86400 + ((year_corrected + 299)/400)*86400;
+    static inline constexpr unsigned int
+    leap_years_count(int start_year, int end_year){
+        start_year--;
+        return ((end_year/4) - (end_year/100) + (end_year/400)) - ((start_year/4) - (start_year/100) + (start_year/400));
     }
-    
+
     static inline constexpr void
     epoch_to_datetime_pack(long long time, datetime_pack &pack){
 
@@ -62,6 +54,31 @@ namespace gtr {
         pack.minute = (sec_per_day % (60 * 60)) / 60;
         pack.second = (sec_per_day % (60 * 60)) % 60;
     }
+           
+    static inline constexpr long long
+    seconds_since_epoch(const int day, const int month,
+                        const int year, const int hour,
+                        const int minute, const int second) {
+
+       // Reference https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04
+        int day_corrected = days_until_month(year, month > 0 && month <= 12 ? month : 12) + day - 1;
+        if (month == 2 && _IS_LEAP_YEAR(year)){
+            day_corrected--;
+        }
+        if (year >= 1970){
+            long long year_corrected = year - 1900;
+            return second + minute * 60 + hour * 3600 + day_corrected * 86400LL +
+                (year_corrected - 70) * 31536000 +
+                ((year_corrected - 69)/4)*86400 -
+            ((year_corrected - 1)/100)*86400 + ((year_corrected + 299)/400)*86400;
+        }
+        int leaps = leap_years_count(year, 1970);
+        int normal = (1970 - year) - leaps;
+        int total_days = leaps * 366LL + normal * 365LL;
+        total_days-= day_corrected;
+        return (second + minute * 60 + hour * 3600 - total_days * 86400LL);
+    }
+    
 
 /**
  * Converts a datetime to a string based on the specified format.
