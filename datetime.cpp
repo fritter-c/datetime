@@ -60,7 +60,7 @@ namespace gtr {
                         const int year, const int hour,
                         const int minute, const int second) {
 
-       // Reference https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04
+        // Reference https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04
         int day_corrected = days_until_month(year, month > 0 && month <= 12 ? month : 12) + day - 1;
         if (month == 2 && _IS_LEAP_YEAR(year)){
             day_corrected--;
@@ -73,6 +73,8 @@ namespace gtr {
             ((year_corrected - 1)/100)*86400 + ((year_corrected + 299)/400)*86400;
         }
         int leaps = leap_years_count(year, 1970);
+        if (year < 0 && _IS_LEAP_YEAR(year))
+            leaps++;
         int normal = (1970 - year) - leaps;
         int total_days = leaps * 366LL + normal * 365LL;
         total_days-= day_corrected;

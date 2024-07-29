@@ -370,5 +370,5 @@ using perfect_parser_default =
                    separator_field<>, hour_field, separator_field<>, minute_field,
                    separator_field<>, second_field>;
 #endif // DATETIME_PERFERCT_PARSER
-}; // namespace gtr
+};     // namespace gtr
 #endif
