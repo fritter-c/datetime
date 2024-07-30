@@ -1,12 +1,12 @@
 #include "datetime.h"
-#define _IS_LEAP_YEAR(Y) (((Y) % 4 == 0 && (Y) % 100 != 0) || (Y % 400 == 0))
-
+#include "datetime_parser.h"
 namespace gtr {
+    constexpr inline bool is_leap_year(int year){return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;}
     constexpr unsigned int monthdays[13] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
     constexpr int days_in_month[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
     static inline constexpr unsigned int
-    days_until_month(const int year,const int month){return (_IS_LEAP_YEAR(year) ? monthdays[month -1] + (month > 1): monthdays[month - 1]);}
+    days_until_month(const int year,const int month){return (is_leap_year(year) ? monthdays[month -1] + (month > 1): monthdays[month - 1]);}
 
     static inline constexpr unsigned int
     leap_years_count(int start_year, int end_year){
@@ -62,7 +62,7 @@ namespace gtr {
 
         // Reference https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04
         int day_corrected = days_until_month(year, month > 0 && month <= 12 ? month : 12) + day - 1;
-        if (month == 2 && _IS_LEAP_YEAR(year)){
+        if (month == 2 && is_leap_year(year)){
             day_corrected--;
         }
         if (year >= 1970){
@@ -73,7 +73,7 @@ namespace gtr {
             ((year_corrected - 1)/100)*86400 + ((year_corrected + 299)/400)*86400;
         }
         int leaps = leap_years_count(year, 1970);
-        if (year < 0 && _IS_LEAP_YEAR(year))
+        if (year < 0 && is_leap_year(year))
             leaps++;
         int normal = (1970 - year) - leaps;
         int total_days = leaps * 366LL + normal * 365LL;
@@ -139,7 +139,7 @@ namespace gtr {
                 default:separator_field<1>::puts(&state, &out_ptr, pack);break;
                 }
             }
-            _END_STRING(out_ptr);
+            end_string(out_ptr);
             return true;
         }
         return datetime_to_string(date, out, "YYYY-MM-DDThh:mm:ss+00:00", date_format::text_date);
@@ -212,7 +212,7 @@ namespace gtr {
         if (pack.day > days_in_month[pack.month - 1]) {
             pack.day = days_in_month[pack.month - 1];
         }      
-        if (_IS_LEAP_YEAR(pack.year) && pack.month == 2) {
+        if (is_leap_year(pack.year) && pack.month == 2) {
             pack.day = february_in_leap;  // February in a leap year
         }
         *this = datetime(pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second, pack.microsecond);
@@ -228,7 +228,7 @@ namespace gtr {
         if (pack.day > days_in_month[pack.month - 1]) {
             pack.day = days_in_month[pack.month - 1];
         }      
-        if (_IS_LEAP_YEAR(pack.year) && pack.month == 2) {
+        if (is_leap_year(pack.year) && pack.month == 2) {
             pack.day = february_in_leap;  // February in a leap year
         }
         *this = datetime(pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second, pack.microsecond); 
