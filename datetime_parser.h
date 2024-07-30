@@ -2,8 +2,12 @@
 #define DATETIME_PARSER_H
 #include "datetime.h"
 namespace gtr {
-    constexpr inline bool is_alpha(char a){return a >= '0' && a <= '9';}
-    constexpr inline void end_string(char* s){ *s = '\0';}
+constexpr inline bool is_alpha(char a) {
+    return a >= '0' && a <= '9';
+}
+constexpr inline void end_string(char *s) {
+    *s = '\0';
+}
 constexpr const char *datetime_month_abbrev[]{"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                                               "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 inline int datetime_get_month_from_sum(int sum) {
@@ -263,5 +267,5 @@ using perfect_parser_default =
                    separator_field<>, hour_field, separator_field<>, minute_field,
                    separator_field<>, second_field>;
 #endif // DATETIME_PERFERCT_PARSER
-};
+};     // namespace gtr
 #endif

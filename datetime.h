@@ -1,10 +1,12 @@
 #ifndef GTR_DATETIME_H
 #define GTR_DATETIME_H
-namespace gtr {    
+namespace gtr {
 constexpr auto DATETIME_DEFAULT_FORMAT = "DD/MM/YYYY hh:mm:ss";
 constexpr auto DATETIME_INVALID = -9223372036854775807LL - 1LL;
+
 enum class date_format { text_date, iso_date };
 enum class month_format { month_digits, month_abbrev };
+
 struct datetime_pack {
     int year;
     unsigned char month;
