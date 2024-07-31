@@ -42,3 +42,40 @@ Warning:
   
 
 This will create a function that executes the correct parsing instructions in the correct order(year, separator, month...) so a swicth statement is no longer necessary resulting in less branches and state verification.
+
+# example
+
+    #include "datetime.h"
+    #include <iostream>
+    #include <chrono>
+    using gtr::datetime;
+    using namespace std;
+    using namespace chrono;
+    int main(){    
+        datetime dt = "03/11/1995 01:30:00";
+        const auto now = system_clock::now();
+        datetime dt2 = duration_cast<microseconds>(now.time_since_epoch()).count(); 
+
+        char buffer[64];
+
+        //Writes dt in another format
+        dt.to_string_format(buffer, "YYYY/MMM/DD");
+        cout << "Date I was born -> " << buffer << "\n";
+
+        //Separators are just ignored so 'of' is also written to the buffer
+        dt2.to_string_format(buffer, "MMM DD hh:mm:ss:zzz of YYYY");
+        cout << "System time now (UTC+00:00) -> " << buffer << "\n"; 
+        return 0;
+    };
+
+To build the example:
+
+    mkdir -p build
+    cd build
+    cmake ..
+    make
+    ./example
+
+This example show a basic datetime creation through a string and through system clock.
+
+      
