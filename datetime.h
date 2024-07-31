@@ -26,8 +26,8 @@ struct datetime {
 
     datetime(int day, int month, int year, int hour = 0, int minute = 0, int second = 0,
              int microsecond = 0);
-    explicit datetime(const char *date, const char *format = DATETIME_DEFAULT_FORMAT,
-                      date_format group_format = date_format::text_date);
+    datetime(const char *date, const char *format = DATETIME_DEFAULT_FORMAT,
+             date_format group_format = date_format::text_date);
 
     // trivial
     ~datetime() = default;
