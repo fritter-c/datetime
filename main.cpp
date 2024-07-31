@@ -17,7 +17,6 @@ int main(){
 
     //Separators are just ignored so 'of' is also written to the buffer
     dt2.to_string_format(buffer, "MMM DD hh:mm:ss:zzz of YYYY");
-    cout << "System time now -> " << buffer << "\n"; 
-
+    cout << "System time now (UTC+00:00) -> " << buffer << "\n"; 
     return 0;
 };
