@@ -24,10 +24,8 @@ struct datetime {
     inline constexpr datetime() : data(0){};
     inline constexpr datetime(long long _data) : data(_data){};
 
-    datetime(int day, int month, int year, int hour = 0, int minute = 0, int second = 0,
-             int microsecond = 0);
-    datetime(const char *date, const char *format = DATETIME_DEFAULT_FORMAT,
-             date_format group_format = date_format::text_date);
+    datetime(int day, int month, int year, int hour = 0, int minute = 0, int second = 0, int microsecond = 0);
+    datetime(const char *date, const char *format = DATETIME_DEFAULT_FORMAT, date_format group_format = date_format::text_date);
 
     // trivial
     ~datetime() = default;
@@ -38,17 +36,16 @@ struct datetime {
 
     inline bool is_valid() const { return data != DATETIME_INVALID; }
 
-    bool to_string_format(char *out, const char *format = DATETIME_DEFAULT_FORMAT,
-                          date_format group_format = date_format::text_date) const;
+    bool to_string_format(char *out, const char *format = DATETIME_DEFAULT_FORMAT, date_format group_format = date_format::text_date) const;
 
-    bool from_string(const char *date, const char *format = DATETIME_DEFAULT_FORMAT,
-                     date_format group_format = date_format::text_date);
+    bool from_string(const char *date, const char *format = DATETIME_DEFAULT_FORMAT, date_format group_format = date_format::text_date);
 
     void to_pack(datetime_pack &) const;
 
+    void to_timezone(const char *timezone);
+
     inline void from_pack(datetime_pack &pack) {
-        *this = datetime(pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second,
-                         pack.microsecond);
+        *this = datetime(pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second, pack.microsecond);
     }
 
     inline constexpr void add_microseconds(long long microseconds) { data += microseconds; }

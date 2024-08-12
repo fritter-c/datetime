@@ -8,8 +8,7 @@ constexpr inline bool is_alpha(char a) {
 constexpr inline void end_string(char *s) {
     *s = '\0';
 }
-constexpr const char *datetime_month_abbrev[]{"Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                                              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+constexpr const char *datetime_month_abbrev[]{"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 inline int datetime_get_month_from_sum(int sum) {
     constexpr const int char_sum[] = {281, 269, 288, 291, 295, 301, 299, 401, 296, 294, 307, 268};
     int month = 1;
@@ -124,32 +123,36 @@ struct day_field {
 };
 
 template <month_format Format = month_format::month_digits> struct month_field {
-    static inline int parse(const char **state, datetime_pack &pack) {
-        if constexpr (Format == month_format::month_digits) {
-            char buffer[8];
-            buffer[0] = *(*state)++;
-            buffer[1] = *(*state)++;
-            end_string(&buffer[2]);
-            pack.month = datetime_atoi(buffer);
-            return 2;
-        } else {
-            pack.month = datetime_get_month_from_sum((*state)[0] + (*state)[1] + (*state)[2]);
-            (*state) += 3;
-            return 3;
-        }
-    }
-    static inline void puts(const char **format, char **out, datetime_pack &pack) {
-        if constexpr (Format == month_format::month_abbrev) {
-            datetime_strcpy(*out, datetime_month_abbrev[pack.month - 1]);
-            *format += 3;
-            *out += 3;
-        } else {
-            datetime_puts_integer(*out, 2, pack.month);
-            *format += 2;
-            *out += 2;
-        }
-    }
+    static inline int parse(const char **state, datetime_pack &pack);
+    static inline void puts(const char **format, char **out, datetime_pack &pack);
 };
+
+template <month_format Format> inline void month_field<Format>::puts(const char **format, char **out, datetime_pack &pack) {
+    datetime_strcpy(*out, datetime_month_abbrev[pack.month - 1]);
+    *format += 3;
+    *out += 3;
+}
+
+template <> inline void month_field<month_format::month_digits>::puts(const char **format, char **out, datetime_pack &pack) {
+    datetime_puts_integer(*out, 2, pack.month);
+    *format += 2;
+    *out += 2;
+}
+
+template <> inline int month_field<month_format::month_digits>::parse(const char **state, datetime_pack &pack) {
+    char buffer[8];
+    buffer[0] = *(*state)++;
+    buffer[1] = *(*state)++;
+    end_string(&buffer[2]);
+    pack.month = datetime_atoi(buffer);
+    return 2;
+}
+
+template <month_format Format> inline int month_field<Format>::parse(const char **state, datetime_pack &pack) {
+    pack.month = datetime_get_month_from_sum((*state)[0] + (*state)[1] + (*state)[2]);
+    (*state) += 3;
+    return 3;
+}
 
 struct hour_field {
     static inline int parse(const char **state, datetime_pack &pack) {
@@ -239,8 +242,7 @@ template <class... Args> struct perfect_parser {
         datetime_pack pack;
         const char *state = date;
         parse_impl(&state, pack);
-        return datetime{pack.day,    pack.month,  pack.year,       pack.hour,
-                        pack.minute, pack.second, pack.microsecond};
+        return datetime{pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second, pack.microsecond};
     }
 
     static void put_datetime(datetime date, const char *format, char *out) {
@@ -253,19 +255,13 @@ template <class... Args> struct perfect_parser {
     }
 
   private:
-    static void parse_impl(const char **state, datetime_pack &pack) {
-        ((void)Args{}.parse(state, pack), ...);
-    }
-    static void put_impl(const char **format, char **out, datetime_pack &pack) {
-        (Args{}.puts(format, out, pack), ...);
-    }
+    static void parse_impl(const char **state, datetime_pack &pack) { ((void)Args{}.parse(state, pack), ...); }
+    static void put_impl(const char **format, char **out, datetime_pack &pack) { (Args{}.puts(format, out, pack), ...); }
 };
 
 // Parses DD/MM/YYYY hh:mm:ss
-using perfect_parser_default =
-    perfect_parser<day_field, separator_field<>, month_field<>, separator_field<>, year_field,
-                   separator_field<>, hour_field, separator_field<>, minute_field,
-                   separator_field<>, second_field>;
+using perfect_parser_default = perfect_parser<day_field, separator_field<>, month_field<>, separator_field<>, year_field, separator_field<>,
+                                              hour_field, separator_field<>, minute_field, separator_field<>, second_field>;
 #endif // DATETIME_PERFERCT_PARSER
 };     // namespace gtr
 #endif

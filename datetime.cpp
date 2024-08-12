@@ -296,4 +296,72 @@ namespace gtr {
         return pack.microsecond;
         
     }
+
+    void
+    datetime::to_timezone(const char *timezone)
+    {
+         int offset = 0;
+         auto strcmp = [](const char* a, const char*b){
+             char* pa;
+             char* pb;
+             while(*pa != '\0' && *pb != '\0'){
+                 if (*pa != *pb)
+                     return 1;
+                 pa++;
+                 pb++;
+             }
+             return (int)(*pa != *pb);
+         };
+
+         if (strcmp(timezone, "Los Angeles") == 0 || strcmp(timezone, "PST") == 0)
+         {
+             offset = -8;
+         }
+         else if (strcmp(timezone, "New York") == 0 || strcmp(timezone, "EST") == 0)
+         {
+             offset = -5;
+         }
+         else if (strcmp(timezone, "Brasília") == 0)
+         {
+             offset = -3;
+         }
+         else if (strcmp(timezone, "London") == 0 || strcmp(timezone, "GMT") == 0)
+         {
+             offset = 0;
+         }
+         else if (strcmp(timezone, "Paris") == 0 || strcmp(timezone, "CET") == 0)
+         {
+             offset = +1;
+         }
+         else if (strcmp(timezone, "Moscow") == 0)
+         {
+             offset = +3;
+         }
+         else if (strcmp(timezone, "Dubai") == 0)
+         {
+             offset = +4;
+         }
+         else if (strcmp(timezone, "Bangkok") == 0)
+         {
+             offset = +7;
+         }
+         else if (strcmp(timezone, "Beijing") == 0)
+         {
+             offset = +8;
+         }
+         else if (strcmp(timezone, "Tokyo") == 0)
+         {
+             offset = +9;
+         }
+         else if (strcmp(timezone, "Sydney") == 0)
+         {
+             offset = +10;
+         }
+         else
+         {
+             return;
+         }
+         // Apply the offset to the internal datetime representation
+         this->add_hours(offset);   
+    }
 };
