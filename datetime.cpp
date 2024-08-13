@@ -293,8 +293,7 @@ namespace gtr {
     {
         datetime_pack pack;
         epoch_to_datetime_pack(data, pack);
-        return pack.microsecond;
-        
+        return pack.microsecond;    
     }
 
     void
@@ -302,15 +301,15 @@ namespace gtr {
     {
          int offset = 0;
          auto strcmp = [](const char* a, const char*b){
-             char* pa;
-             char* pb;
+             const char* pa = a;
+             const char* pb = b;
              while(*pa != '\0' && *pb != '\0'){
-                 if (*pa != *pb)
-                     return 1;
-                 pa++;
-                 pb++;
+                if (*pa != *pb)
+                    return 1;
+                pa++;
+                pb++;
              }
-             return (int)(*pa != *pb);
+            return (int)(*pa != *pb);
          };
 
          if (strcmp(timezone, "Los Angeles") == 0 || strcmp(timezone, "PST") == 0)
@@ -321,7 +320,7 @@ namespace gtr {
          {
              offset = -5;
          }
-         else if (strcmp(timezone, "Brasília") == 0)
+         else if (strcmp(timezone, "Brasilia") == 0)
          {
              offset = -3;
          }
