@@ -15,7 +15,7 @@ inline long long minutes_in_between(gtr::datetime dt1, gtr::datetime dt2) {
 }
 
 inline long long hours_in_between(gtr::datetime dt1, gtr::datetime dt2) {
-    return seconds_in_between(dt1, dt2) / 60LL;
+    return minutes_in_between(dt1, dt2) / 60LL;
 }
 
 inline long long days_in_between(gtr::datetime dt1, gtr::datetime dt2) {

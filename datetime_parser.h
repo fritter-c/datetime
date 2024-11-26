@@ -1,19 +1,25 @@
 #ifndef DATETIME_PARSER_H
 #define DATETIME_PARSER_H
 #include "datetime.h"
+#ifdef _WIN32
+#pragma warning(push)
+#pragma warning(disable : 4244)
+#endif
 namespace gtr {
+
 constexpr inline bool is_alpha(char a) {
     return a >= '0' && a <= '9';
 }
+
 constexpr inline void end_string(char *s) {
     *s = '\0';
 }
 constexpr const char *datetime_month_abbrev[]{"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+
 inline int datetime_get_month_from_sum(int sum) {
     constexpr const int char_sum[] = {281, 269, 288, 291, 295, 301, 299, 401, 296, 294, 307, 268};
     int month = 1;
-    while (char_sum[month - 1] != sum)
-        month++;
+    while (char_sum[month - 1] != sum) month++;
     return month;
 }
 
@@ -23,15 +29,14 @@ inline void datetime_strcpy(char *dest, const char *source) {
     } while (*source != '\0');
 }
 
-inline long long datetime_atoi(const char *buffer) {
+inline int datetime_atoi(const char *buffer) {
     bool neg = false;
     if (buffer[0] == '-') {
         neg = true;
         buffer++;
     }
-    long long value = 0;
-    while (*buffer != '\0' && is_alpha(*buffer))
-        value = value * 10 + *buffer++ - '0';
+    int value = 0;
+    while (*buffer != '\0' && is_alpha(*buffer)) value = value * 10 + *buffer++ - '0';
     return neg ? -value : value;
 }
 
@@ -106,6 +111,7 @@ struct year_field {
         }
     }
 };
+
 struct day_field {
     static inline int parse(const char **state, datetime_pack &pack) {
         char buffer[8];
@@ -169,6 +175,7 @@ struct hour_field {
         *out += 2;
     }
 };
+
 struct minute_field {
     static inline int parse(const char **state, datetime_pack &pack) {
         char buffer[8];
@@ -236,10 +243,11 @@ template <int Count = 1> struct separator_field {
         *(*out)++ = *(*format)++;
     }
 };
+
 #ifdef DATETIME_PERFECT_PARSER
 template <class... Args> struct perfect_parser {
     static datetime parse_datetime(const char *date) {
-        datetime_pack pack;
+        datetime_pack pack{};
         const char *state = date;
         parse_impl(&state, pack);
         return datetime{pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second, pack.microsecond};
@@ -264,4 +272,8 @@ using perfect_parser_default = perfect_parser<day_field, separator_field<>, mont
                                               hour_field, separator_field<>, minute_field, separator_field<>, second_field>;
 #endif // DATETIME_PERFERCT_PARSER
 };     // namespace gtr
+
+#ifdef _WIN32
+#pragma warning(pop)
+#endif
 #endif

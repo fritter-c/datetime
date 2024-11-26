@@ -1,86 +1,81 @@
 #include "datetime.h"
 #include "datetime_parser.h"
 namespace gtr {
-    constexpr inline bool is_leap_year(int year){return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;}
-    constexpr unsigned int monthdays[13] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
-    constexpr int days_in_month[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+constexpr inline bool is_leap_year(int year) {
+    return (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
+}
+constexpr unsigned int monthdays[13] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365};
+constexpr int days_in_month[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-    static inline constexpr unsigned int
-    days_until_month(const int year,const int month){return (is_leap_year(year) ? monthdays[month -1] + (month > 1): monthdays[month - 1]);}
+static inline constexpr unsigned int days_until_month(const int year, const int month) {
+    return (is_leap_year(year) ? monthdays[month - 1] + (month > 1) : monthdays[month - 1]);
+}
 
-    static inline constexpr unsigned int
-    leap_years_count(int start_year, int end_year){
-        start_year--;
-        return ((end_year/4) - (end_year/100) + (end_year/400)) - ((start_year/4) - (start_year/100) + (start_year/400));
+static inline constexpr unsigned int leap_years_count(int start_year, int end_year) {
+    start_year--;
+    return ((end_year / 4) - (end_year / 100) + (end_year / 400)) - ((start_year / 4) - (start_year / 100) + (start_year / 400));
+}
+
+static inline constexpr void epoch_to_datetime_pack(long long time, datetime_pack &pack) {
+
+    // Set microseconds
+    if (time > 0)
+        pack.microsecond = time % 1000000LL;
+    else
+        pack.microsecond = -time % 1000000LL;
+
+    time /= 1000000LL;
+
+    // Adapted from sourceware NewLib
+    long long days = time / (24 * 60 * 60) + 719468L;
+    long long sec_per_day = time % (24 * 60 * 60);
+    if (sec_per_day < 0) {
+        sec_per_day += 24 * 60 * 60;
+        days--;
     }
 
-    static inline constexpr void
-    epoch_to_datetime_pack(long long time, datetime_pack &pack){
+    int era = (days >= 0 ? days : days - 146097L + 1) / 146097L;
+    unsigned long long era_day = days - era * 146097L;
+    unsigned int era_year = (era_day - era_day / (1461 - 1) + era_day / 36524L - era_day / (146097L - 1)) / 365;
+    unsigned int year_day = era_day - (365 * era_year + era_year / 4 - era_year / 100);
+    unsigned month = (5 * year_day + 2) / 153;
+    unsigned day = year_day - (153 * month + 2) / 5 + 1;
+    month += month < 10 ? 2 : -10;
+    int year = era_year + era * 400 + (month <= 1);
+    // Set the year
+    pack.year = year;
 
-        // Set microseconds
-        if (time > 0)
-            pack.microsecond = static_cast<int>(time % 1000000LL);
-        else
-            pack.microsecond = static_cast<int>(-time % 1000000LL);
-        
-        time /= 1000000LL;
+    // Set the month and month day
+    pack.month = month + 1;
+    pack.day = day;
 
-        // Adapted from sourceware NewLib 
-        long long days = time / (24 * 60 * 60) + 719468L;
-        long long sec_per_day = time % (24 * 60 * 60);
-        if (sec_per_day < 0)
-        {
-            sec_per_day += 24 * 60 * 60;
-            days--;
-        }
+    // Set hour, minute and second
+    pack.hour = sec_per_day / (60 * 60);
+    pack.minute = (sec_per_day % (60 * 60)) / 60;
+    pack.second = (sec_per_day % (60 * 60)) % 60;
+}
 
-        int era = (days >= 0 ? days : days - 146097L + 1) / 146097L;
-        unsigned long long era_day = days - era * 146097L;
-        unsigned int era_year = (era_day - era_day / (1461 - 1) + era_day / 36524L - era_day / (146097L - 1))/365;
-        unsigned int year_day = era_day - (365 * era_year + era_year / 4 - era_year / 100);
-        unsigned month = (5 * year_day + 2)/153;
-        unsigned day = year_day - (153 * month + 2)/5 + 1;
-        month += month < 10 ? 2 : -10; 
-        int year = era_year + era * 400 + static_cast<int>(month <= 1);
-        //Set the year
-        pack.year = year;
+static inline constexpr long long seconds_since_epoch(const int day, const int month, const int year, const int hour, const int minute,
+                                                      const int second) {
 
-        // Set the month and month day
-        pack.month = month + 1;
-        pack.day = day;
-
-        // Set hour, minute and second
-        pack.hour = sec_per_day / (60 * 60);
-        pack.minute = (sec_per_day % (60 * 60)) / 60;
-        pack.second = (sec_per_day % (60 * 60)) % 60;
+    // Reference https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04
+    int day_corrected = days_until_month(year, month > 0 && month <= 12 ? month : 12) + day - 1;
+    if (month == 2 && is_leap_year(year)) {
+        day_corrected--;
     }
-           
-    static inline constexpr long long
-    seconds_since_epoch(const int day, const int month,
-                        const int year, const int hour,
-                        const int minute, const int second) {
-
-        // Reference https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04
-        int day_corrected = days_until_month(year, month > 0 && month <= 12 ? month : 12) + day - 1;
-        if (month == 2 && is_leap_year(year)){
-            day_corrected--;
-        }
-        if (year >= 1970){
-            long long year_corrected = year - 1900;
-            return second + minute * 60 + hour * 3600 + day_corrected * 86400LL +
-                (year_corrected - 70) * 31536000 +
-                ((year_corrected - 69)/4)*86400 -
-            ((year_corrected - 1)/100)*86400 + ((year_corrected + 299)/400)*86400;
-        }
-        int leaps = leap_years_count(year, 1970);
-        if (year < 0 && is_leap_year(year))
-            leaps++;
-        int normal = (1970 - year) - leaps;
-        int total_days = leaps * 366LL + normal * 365LL;
-        total_days-= day_corrected;
-        return (second + minute * 60 + hour * 3600 - total_days * 86400LL);
+    if (year >= 1970) {
+        long long year_corrected = year - 1900;
+        return second + minute * 60 + hour * 3600 + day_corrected * 86400LL + (year_corrected - 70) * 31536000 +
+               ((year_corrected - 69) / 4) * 86400 - ((year_corrected - 1) / 100) * 86400 + ((year_corrected + 299) / 400) * 86400;
     }
-    
+    int leaps = leap_years_count(year, 1970);
+    if (year < 0 && is_leap_year(year))
+        leaps++;
+    int normal = (1970 - year) - leaps;
+    int total_days = leaps * 366LL + normal * 365LL;
+    total_days -= day_corrected;
+    return (second + minute * 60 + hour * 3600 - total_days * 86400LL);
+}
 
 /**
  * Converts a datetime to a string based on the specified format.
@@ -116,251 +111,352 @@ namespace gtr {
  * @param format The format string specifying the datetime representation.
  * @return True if the conversion was successful, false otherwise.
  */
-    static bool
-    datetime_to_string(datetime date, char* out,
-                       const char *format = DATETIME_DEFAULT_FORMAT, date_format group_format = date_format::text_date) {
-        if (group_format == date_format::text_date){
-            datetime_pack pack;
-            date.to_pack(pack);
-            const char* state = format;
-            char* out_ptr = out;
-            while (*state != '\0') {
-                switch (*state) {
-                case 'D':day_field::puts(&state, &out_ptr, pack); break;
-                case 'M':
-                    if(*(state + 1) == 'M' && *(state +2) == 'M')month_field<month_format::month_abbrev>::puts(&state,&out_ptr,pack);
-                    else month_field<>::puts(&state,&out_ptr,pack);
-                    break;
-                case 'Y':year_field::puts(&state, &out_ptr, pack);break;
-                case 'h':hour_field::puts(&state, &out_ptr, pack);break;
-                case 'm':minute_field::puts(&state, &out_ptr, pack);break;
-                case 's':second_field::puts(&state,&out_ptr, pack);break;
-                case 'z':microsecond_field::puts(&state, &out_ptr, pack);break;
-                default:separator_field<1>::puts(&state, &out_ptr, pack);break;
-                }
+static bool datetime_to_string(datetime date, char *out, const char *format = DATETIME_DEFAULT_FORMAT,
+                               date_format group_format = date_format::text_date) {
+    if (group_format == date_format::text_date) {
+        datetime_pack pack;
+        date.to_pack(pack);
+        const char *state = format;
+        char *out_ptr = out;
+        while (*state != '\0') {
+            switch (*state) {
+            case 'D':
+                day_field::puts(&state, &out_ptr, pack);
+                break;
+            case 'M':
+                if (*(state + 1) == 'M' && *(state + 2) == 'M')
+                    month_field<month_format::month_abbrev>::puts(&state, &out_ptr, pack);
+                else
+                    month_field<>::puts(&state, &out_ptr, pack);
+                break;
+            case 'Y':
+                year_field::puts(&state, &out_ptr, pack);
+                break;
+            case 'h':
+                hour_field::puts(&state, &out_ptr, pack);
+                break;
+            case 'm':
+                minute_field::puts(&state, &out_ptr, pack);
+                break;
+            case 's':
+                second_field::puts(&state, &out_ptr, pack);
+                break;
+            case 'z':
+                microsecond_field::puts(&state, &out_ptr, pack);
+                break;
+            default:
+                separator_field<1>::puts(&state, &out_ptr, pack);
+                break;
             }
-            end_string(out_ptr);
-            return true;
         }
-        return datetime_to_string(date, out, "YYYY-MM-DDThh:mm:ss+00:00", date_format::text_date);
+        end_string(out_ptr);
+        return true;
     }
+    return datetime_to_string(date, out, "YYYY-MM-DDThh:mm:ss+00:00", date_format::text_date);
+}
 
-    static long long
-    parse_datetime_string(const char * date, const char * format, date_format group_format = date_format::text_date) {
-        const char* state = format;
-        const char* date_char = date;
-        datetime_pack pack{};
-        if (group_format == date_format::text_date){
-            while(*state != '\0'){
-                switch(*state){
-                case 'M':
-                    if (*(state +1) == 'M' && *(state + 2 ) == 'M')state += month_field<month_format::month_abbrev>::parse(&date_char, pack);
-                    else state += month_field<>::parse(&date_char, pack);
-                    break;
-                case 'Y':state += year_field::parse(&date_char, pack);break;
-                case 'D':state += day_field::parse(&date_char, pack);break;
-                case 'h':state += hour_field::parse(&date_char, pack);break;
-                case 'm':state += minute_field::parse(&date_char, pack);break;
-                case 's':state += second_field::parse(&date_char, pack);break;
-                case 'z':state += microsecond_field::parse(&date_char, pack);break;
-                default:state += separator_field<1>::parse(&date_char, pack);break;
-                }
+static long long parse_datetime_string(const char *date, const char *format, date_format group_format = date_format::text_date) {
+    const char *state = format;
+    const char *date_char = date;
+    datetime_pack pack{};
+    if (group_format == date_format::text_date) {
+        while (*state != '\0') {
+            switch (*state) {
+            case 'M':
+                if (*(state + 1) == 'M' && *(state + 2) == 'M')
+                    state += month_field<month_format::month_abbrev>::parse(&date_char, pack);
+                else
+                    state += month_field<>::parse(&date_char, pack);
+                break;
+            case 'Y':
+                state += year_field::parse(&date_char, pack);
+                break;
+            case 'D':
+                state += day_field::parse(&date_char, pack);
+                break;
+            case 'h':
+                state += hour_field::parse(&date_char, pack);
+                break;
+            case 'm':
+                state += minute_field::parse(&date_char, pack);
+                break;
+            case 's':
+                state += second_field::parse(&date_char, pack);
+                break;
+            case 'z':
+                state += microsecond_field::parse(&date_char, pack);
+                break;
+            default:
+                state += separator_field<1>::parse(&date_char, pack);
+                break;
             }
-            return datetime(pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second, pack.microsecond).data;
         }
-        return parse_datetime_string(date, "YYYY-MM-DDThh:mm:ss+00:00", date_format::text_date);
+        return datetime(pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second, pack.microsecond).data;
     }
-    
-    datetime::datetime(int day, int month, int year, int hour, int minute, int second, int microsecond)
-    {
-        data = seconds_since_epoch(day, month, year, hour, minute,second) * 1000000LL + microsecond;
-    }
-    
-    datetime::datetime(const char* date, const char* format, date_format group_format)
-    {
-        from_string(date, format, group_format);
-    }
+    return parse_datetime_string(date, "YYYY-MM-DDThh:mm:ss+00:00", date_format::text_date);
+}
 
-    bool
-    datetime::from_string(const char* date, const char* format, date_format group_format)
-    {
-        data = parse_datetime_string(date, format, group_format);
-        return data != DATETIME_INVALID;
-    }
+datetime::datetime(int day, int month, int year, int hour, int minute, int second, int microsecond) {
+    data = seconds_since_epoch(day, month, year, hour, minute, second) * 1000000LL + microsecond;
+}
 
-    bool
-    datetime::to_string_format(char* out,const char* format, date_format group_format) const
-    {
-        return datetime_to_string(*this,out, format, group_format);
-    }
-    
-    void
-    datetime::add_months(int months)
-    {
-        datetime_pack pack;
-        to_pack(pack);        
-        const int new_month = pack.month + months;
-        constexpr int february_in_leap = 29;
+datetime::datetime(const char *date, const char *format, date_format group_format) {
+    from_string(date, format, group_format);
+}
 
-        if (new_month > 12){
-            pack.year = pack.year + new_month / 12;
-            pack.month = new_month % 12  == 0 ? 1 : new_month % 12;   
+bool datetime::from_string(const char *date, const char *format, date_format group_format) {
+    data = parse_datetime_string(date, format, group_format);
+    return data != DATETIME_INVALID;
+}
+
+bool datetime::to_string_format(char *out, const char *format, date_format group_format) const {
+    return datetime_to_string(*this, out, format, group_format);
+}
+
+void datetime::add_months(int months) {
+    datetime_pack pack;
+    to_pack(pack);
+    const int new_month = pack.month + months;
+    constexpr int february_in_leap = 29;
+
+    if (new_month > 12) {
+        pack.year = pack.year + new_month / 12;
+        pack.month = new_month % 12 == 0 ? 1 : new_month % 12;
+    } else {
+        pack.month = new_month;
+    }
+    if (pack.day > days_in_month[pack.month - 1]) {
+        pack.day = days_in_month[pack.month - 1];
+    }
+    if (is_leap_year(pack.year) && pack.month == 2) {
+        pack.day = february_in_leap; // February in a leap year
+    }
+    *this = datetime(pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second, pack.microsecond);
+}
+
+void datetime::add_years(int years) {
+    datetime_pack pack;
+    to_pack(pack);
+    pack.year += years;
+    constexpr int february_in_leap = 29;
+    if (pack.day > days_in_month[pack.month - 1]) {
+        pack.day = days_in_month[pack.month - 1];
+    }
+    if (is_leap_year(pack.year) && pack.month == 2) {
+        pack.day = february_in_leap; // February in a leap year
+    }
+    *this = datetime(pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second, pack.microsecond);
+}
+
+void datetime::to_pack(datetime_pack &pack) const {
+    epoch_to_datetime_pack(data, pack);
+}
+
+int datetime::day() const {
+    datetime_pack pack;
+    epoch_to_datetime_pack(data, pack);
+    return pack.day;
+}
+
+int datetime::month() const {
+    datetime_pack pack;
+    epoch_to_datetime_pack(data, pack);
+    return pack.month;
+}
+
+int datetime::year() const {
+    datetime_pack pack;
+    epoch_to_datetime_pack(data, pack);
+    return pack.year;
+}
+
+int datetime::second() const {
+    datetime_pack pack;
+    epoch_to_datetime_pack(data, pack);
+    return pack.second;
+}
+
+int datetime::minute() const {
+    datetime_pack pack;
+    epoch_to_datetime_pack(data, pack);
+    return pack.minute;
+}
+
+int datetime::hour() const {
+    datetime_pack pack;
+    epoch_to_datetime_pack(data, pack);
+    return pack.hour;
+}
+
+int datetime::microsecond() const {
+    datetime_pack pack;
+    epoch_to_datetime_pack(data, pack);
+    return pack.microsecond;
+}
+
+int datetime::get_minute_of_day() const {
+    // Optimized
+    long long total_seconds = data / 1000000LL;
+    const long long seconds_per_day = 86400LL;
+    long long seconds_since_midnight = (total_seconds % seconds_per_day + seconds_per_day) % seconds_per_day;
+    int minutes_since_midnight = (int)(seconds_since_midnight / 60);
+    return minutes_since_midnight;
+}
+
+int datetime::get_second_of_day() const {
+    // Optimized
+    long long total_seconds = data / 1000000LL;
+    const long long seconds_per_day = 86400LL;
+    int seconds_since_midnight = (int)((total_seconds % seconds_per_day + seconds_per_day) % seconds_per_day);
+    return seconds_since_midnight;
+}
+
+int datetime::get_microsecond_of_day() const {
+    datetime_pack pack;
+    epoch_to_datetime_pack(data, pack);
+    return pack.hour * 3600 * 1000000 + pack.minute * 60 * 1000000 + pack.second * 1000000 + pack.microsecond;
+}
+
+int datetime::day_of_week() const {
+    datetime_pack pack;
+    epoch_to_datetime_pack(data, pack);
+    int month = pack.month;
+    int year = pack.year;
+    int day = pack.day;
+    if (month < 3) {
+        month += 12;
+        year--;
+    }
+    int K = year % 100;
+    int J = year / 100;
+    int h = (day + 13 * (month + 1) / 5 + K + K / 4 + J / 4 + 5 * J) % 7;
+    return (h + 6) % 7;
+}
+datetime datetime::date() const {
+    datetime_pack pack;
+    epoch_to_datetime_pack(data, pack);
+    return datetime(seconds_since_epoch(pack.day, pack.month, pack.year, 0, 0, 0));
+}
+
+datetime datetime::end_of_the_month() const {
+    datetime_pack pack;
+    epoch_to_datetime_pack(data, pack);
+    int day = days_in_month[pack.month - 1];
+    if (pack.month == 2 && is_leap_year(pack.year))
+        day = 29;
+    return datetime(day, pack.month, pack.year, 23, 59, 59, 999999);
+}
+
+datetime datetime::end_of_the_year() const {
+    datetime_pack pack;
+    epoch_to_datetime_pack(data, pack);
+    return datetime(31, 12, pack.year, 23, 59, 59, 999999);
+}
+
+datetime datetime::end_of_the_week() const {
+    datetime_pack pack;
+    epoch_to_datetime_pack(data, pack);
+
+    int dow = day_of_week();   // 0=Sunday, ...,6=Saturday
+    int days_to_add = 6 - dow; // Days until Saturday
+
+    // Calculate the new day, month, and year
+    int new_day = pack.day + days_to_add;
+    int new_month = pack.month;
+    int new_year = pack.year;
+
+    // Handle month overflow
+    while (new_day > days_in_month[new_month - 1] + ((new_month == 2 && is_leap_year(new_year)) ? 1 : 0)) {
+        new_day -= days_in_month[new_month - 1] + ((new_month == 2 && is_leap_year(new_year)) ? 1 : 0);
+        new_month++;
+        if (new_month > 12) {
+            new_month = 1;
+            new_year++;
         }
-        else{
-            pack.month = new_month;
+    }
+
+    // Set time to 23:59:59.999999
+    return datetime(new_day, new_month, new_year, 23, 59, 59, 999999);
+}
+
+datetime datetime::begin_of_the_month() const {
+    datetime_pack pack;
+    epoch_to_datetime_pack(data, pack);
+    return datetime(1, pack.month, pack.year, 0, 0, 0, 0);
+}
+
+datetime datetime::begin_of_the_year() const {
+    datetime_pack pack;
+    epoch_to_datetime_pack(data, pack);
+    return datetime(1, 1, pack.year, 0, 0, 0, 0);
+}
+
+datetime datetime::begin_of_the_week() const {
+    datetime_pack pack;
+    epoch_to_datetime_pack(data, pack);
+
+    int dow = day_of_week(); // 0=Sunday, ...,6=Saturday
+    int days_to_sub = dow;   // Days until Sunday
+
+    // Calculate the new day, month, and year
+    int new_day = pack.day - days_to_sub;
+    int new_month = pack.month;
+    int new_year = pack.year;
+
+    // Handle month overflow
+    while (new_day <= 0) {
+        new_month--;
+        if (new_month == 0) {
+            new_month = 12;
+            new_year--;
         }
-        if (pack.day > days_in_month[pack.month - 1]) {
-            pack.day = days_in_month[pack.month - 1];
-        }      
-        if (is_leap_year(pack.year) && pack.month == 2) {
-            pack.day = february_in_leap;  // February in a leap year
+        new_day += days_in_month[new_month - 1] + ((new_month == 2 && is_leap_year(new_year)) ? 1 : 0);
+    }
+
+    // Set time to 00:00:00.000000
+    return datetime(new_day, new_month, new_year, 0, 0, 0, 0);
+}
+
+void datetime::to_timezone(const char *timezone) {
+    int offset = 0;
+    auto strcmp = [](const char *a, const char *b) {
+        const char *pa = a;
+        const char *pb = b;
+        while (*pa != '\0' && *pb != '\0') {
+            if (*pa != *pb)
+                return 1;
+            pa++;
+            pb++;
         }
-        *this = datetime(pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second, pack.microsecond);
-    }
+        return (int)(*pa != *pb);
+    };
 
-    void
-    datetime::add_years(int years)
-    {
-        datetime_pack pack;
-        to_pack(pack);
-        pack.year += years;
-        constexpr int february_in_leap = 29;
-        if (pack.day > days_in_month[pack.month - 1]) {
-            pack.day = days_in_month[pack.month - 1];
-        }      
-        if (is_leap_year(pack.year) && pack.month == 2) {
-            pack.day = february_in_leap;  // February in a leap year
-        }
-        *this = datetime(pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second, pack.microsecond); 
+    if (strcmp(timezone, "Los Angeles") == 0 || strcmp(timezone, "PST") == 0) {
+        offset = -8;
+    } else if (strcmp(timezone, "New York") == 0 || strcmp(timezone, "EST") == 0) {
+        offset = -5;
+    } else if (strcmp(timezone, "Brasilia") == 0) {
+        offset = -3;
+    } else if (strcmp(timezone, "London") == 0 || strcmp(timezone, "GMT") == 0) {
+        offset = 0;
+    } else if (strcmp(timezone, "Paris") == 0 || strcmp(timezone, "CET") == 0) {
+        offset = +1;
+    } else if (strcmp(timezone, "Moscow") == 0) {
+        offset = +3;
+    } else if (strcmp(timezone, "Dubai") == 0) {
+        offset = +4;
+    } else if (strcmp(timezone, "Bangkok") == 0) {
+        offset = +7;
+    } else if (strcmp(timezone, "Beijing") == 0) {
+        offset = +8;
+    } else if (strcmp(timezone, "Tokyo") == 0) {
+        offset = +9;
+    } else if (strcmp(timezone, "Sydney") == 0) {
+        offset = +10;
+    } else {
+        return;
     }
-    
-    void
-    datetime::to_pack(datetime_pack& pack) const
-    {
-        epoch_to_datetime_pack(data, pack);
-    }
-
-    int
-    datetime::day() const
-    {
-        datetime_pack pack;
-        epoch_to_datetime_pack(data, pack);
-        return pack.day;
-    }
-    
-    int
-    datetime::month() const
-    {
-        datetime_pack pack;
-        epoch_to_datetime_pack(data, pack);
-        return pack.month;
-    }
-    
-    int
-    datetime::year() const
-    {
-        datetime_pack pack;
-        epoch_to_datetime_pack(data, pack);
-        return pack.year;
-    }
-
-    int
-    datetime::second() const
-    {
-        datetime_pack pack;
-        epoch_to_datetime_pack(data, pack);
-        return pack.second;
-    }
-    
-    int
-    datetime::minute() const
-    {
-        datetime_pack pack;
-        epoch_to_datetime_pack(data, pack);
-        return pack.minute;
-    }
-
-    int
-    datetime::hour() const
-    {
-        datetime_pack pack;
-        epoch_to_datetime_pack(data, pack);
-        return pack.hour;
-    }
-
-    int
-    datetime::microsecond() const
-    {
-        datetime_pack pack;
-        epoch_to_datetime_pack(data, pack);
-        return pack.microsecond;    
-    }
-
-    void
-    datetime::to_timezone(const char *timezone)
-    {
-         int offset = 0;
-         auto strcmp = [](const char* a, const char*b){
-             const char* pa = a;
-             const char* pb = b;
-             while(*pa != '\0' && *pb != '\0'){
-                if (*pa != *pb)
-                    return 1;
-                pa++;
-                pb++;
-             }
-            return (int)(*pa != *pb);
-         };
-
-         if (strcmp(timezone, "Los Angeles") == 0 || strcmp(timezone, "PST") == 0)
-         {
-             offset = -8;
-         }
-         else if (strcmp(timezone, "New York") == 0 || strcmp(timezone, "EST") == 0)
-         {
-             offset = -5;
-         }
-         else if (strcmp(timezone, "Brasilia") == 0)
-         {
-             offset = -3;
-         }
-         else if (strcmp(timezone, "London") == 0 || strcmp(timezone, "GMT") == 0)
-         {
-             offset = 0;
-         }
-         else if (strcmp(timezone, "Paris") == 0 || strcmp(timezone, "CET") == 0)
-         {
-             offset = +1;
-         }
-         else if (strcmp(timezone, "Moscow") == 0)
-         {
-             offset = +3;
-         }
-         else if (strcmp(timezone, "Dubai") == 0)
-         {
-             offset = +4;
-         }
-         else if (strcmp(timezone, "Bangkok") == 0)
-         {
-             offset = +7;
-         }
-         else if (strcmp(timezone, "Beijing") == 0)
-         {
-             offset = +8;
-         }
-         else if (strcmp(timezone, "Tokyo") == 0)
-         {
-             offset = +9;
-         }
-         else if (strcmp(timezone, "Sydney") == 0)
-         {
-             offset = +10;
-         }
-         else
-         {
-             return;
-         }
-         // Apply the offset to the internal datetime representation
-         this->add_hours(offset);   
-    }
-};
+    // Apply the offset to the internal datetime representation
+    this->add_hours(offset);
+}
+}; // namespace gtr
