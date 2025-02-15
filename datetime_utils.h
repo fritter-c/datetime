@@ -2,6 +2,7 @@
 #define DATETIME_FUNCS_H
 #include "datetime.h"
 
+namespace gtr {
 inline long long microseconds_in_between(gtr::datetime dt1, gtr::datetime dt2) {
     return dt2.data - dt1.data;
 }
@@ -23,7 +24,7 @@ inline long long days_in_between(gtr::datetime dt1, gtr::datetime dt2) {
 }
 
 inline long long months_in_between(gtr::datetime dt1, gtr::datetime dt2) {
-    gtr::datetime_pack p1, p2;
+    gtr::datetime_struct p1, p2;
     dt1.to_pack(p1);
     dt2.to_pack(p2);
     int month_diff;
@@ -38,5 +39,5 @@ inline long long months_in_between(gtr::datetime dt1, gtr::datetime dt2) {
 inline long long years_in_between(gtr::datetime dt1, gtr::datetime dt2) {
     return months_in_between(dt1, dt2) / 12;
 }
-
+} // namespace gtr
 #endif

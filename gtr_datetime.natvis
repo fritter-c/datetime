@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <!--
+    Visualizer for gtr::datetime
+    Adjust the namespace/type name if it differs in your code or if you
+    have different templates.
+  -->
+  <Type Name="gtr::datetime">
+    
+
+    <DisplayString>
+      ({year()}-{month()}-{day()} {hour()}:{minute()}:{second()}) 
+      data={data}
+    </DisplayString>
+
+    <!--
+      Expand defines how the debugger�s �expand� arrow shows sub-items.
+      Here, we call inline methods to expose them as if they were fields.
+    -->
+    <Expand>
+      <!-- Raw internal data -->
+      <Item Name="data"> data </Item>
+
+      <!-- If the functions are callable in the debugger, list them here. -->
+      <Item Name="year"> year() </Item>
+      <Item Name="month"> month() </Item>
+      <Item Name="day"> day() </Item>
+      <Item Name="hour"> hour() </Item>
+      <Item Name="minute"> minute() </Item>
+      <Item Name="second"> second() </Item>
+      <Item Name="microsecond"> microsecond() </Item>
+      <Item Name="day_of_week"> day_of_week() </Item>
+      <Item Name="day_of_year"> day_of_week() </Item>
+    </Expand>
+  </Type>
+
+</AutoVisualizer>

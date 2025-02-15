@@ -26,7 +26,7 @@ enum class month_format { month_digits, month_abbrev };
 /**
  * @brief A structure representing the components of a datetime.
  */
-struct datetime_pack {
+struct datetime_struct {
     int year;             /**< The year component of the datetime. */
     unsigned char month;  /**< The month component of the datetime. */
     unsigned char day;    /**< The day component of the datetime. */
@@ -34,6 +34,8 @@ struct datetime_pack {
     unsigned char minute; /**< The minute component of the datetime. */
     int second;           /**< The second component of the datetime. */
     int microsecond;      /**< The microsecond component of the datetime. */
+
+    long long to_datetime();
 };
 
 /**
@@ -109,7 +111,7 @@ struct datetime {
      * @brief Converts the datetime to a datetime_pack structure.
      * @param pack The datetime_pack structure to store the components of the datetime.
      */
-    void to_pack(datetime_pack &pack) const;
+    void to_pack(datetime_struct &pack) const;
 
     /**
      * @brief Converts the datetime to the specified timezone.
@@ -121,7 +123,7 @@ struct datetime {
      * @brief Converts a datetime_pack structure to a datetime.
      * @param pack The datetime_pack structure containing the components of the datetime.
      */
-    inline void from_pack(datetime_pack &pack) {
+    inline void from_pack(datetime_struct &pack) {
         *this = datetime(pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second, pack.microsecond);
     }
 
@@ -302,6 +304,73 @@ struct datetime {
     datetime begin_of_the_week() const;
 
     /**
+     * @brief Returns the datetime representing the beginning of the day.
+     * 
+     * This function calculates and returns the datetime object that corresponds
+     * to the beginning of the current day. The beginning of the day is typically
+     * considered to be the first moment of the day (00:00:00).
+     * 
+     * @return datetime The datetime object representing the beginning of the day.
+     */
+    datetime begin_of_the_day() const;
+
+    /**
+     * @brief Returns the datetime representing the end of the day.
+     * 
+     * This function calculates and returns the datetime object that corresponds
+     * to the end of the current day. The end of the day is typically considered
+     * to be the last moment of the day (23:59:59).
+     * 
+     * @return datetime The datetime object representing the end of the day.
+     */
+    datetime end_of_the_day() const;
+
+    /**
+     * @brief Checks if the datetime is on a different day than the given datetime.
+     * 
+     * This function compares the current datetime object with another datetime object
+     * to determine if they represent different days.
+     * 
+     * @param other The datetime object to compare with.
+     * @return True if the datetimes are on different days, false otherwise.
+     */
+    bool different_day(datetime other) const;
+
+    /**
+     * @brief Checks if the datetime is in a different month than the given datetime.
+     * 
+     * This function compares the current datetime object with another datetime object
+     * to determine if they represent different months.
+     * 
+     * @param other The datetime object to compare with.
+     * @return True if the datetimes are in different months, false otherwise.
+     */
+    bool different_month(datetime other) const;
+
+    /**
+     * @brief Checks if the datetime is in a different year than the given datetime.
+     *
+     * This function compares the current datetime object with another datetime object
+     * to determine if they represent different years.
+     *
+     * @param other The datetime object to compare with.
+     * @return True if the datetimes are in different years, false otherwise.
+     */
+    bool different_year(datetime other) const;
+
+    /**
+     * @brief Returns the amount of days in the month.
+     * @return The amount of days in the month.
+     */
+    static int month_day_count(int month, int year);
+
+    /**
+     * @brief Returns the day of the week for the given date.
+     * @return The day of the week for the given date.
+     */
+    static int day_of_week(int day, int month, int year);
+
+    /**
      * @brief Equality comparison operator.
      * @param other The datetime to compare with.
      * @return True if the datetimes are equal, false otherwise.
@@ -376,8 +445,10 @@ struct datetime {
         data -= other.data;
         return *this;
     }
+
+#ifdef HAS_STD_CHRONO
+    static datetime now();
+#endif
 };
-
 } // namespace gtr
-
 #endif
