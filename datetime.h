@@ -1,6 +1,6 @@
 #ifndef GTR_DATETIME_H
 #define GTR_DATETIME_H
-
+#define HAS_STD_CHRONO
 namespace gtr {
 
 /**
@@ -27,20 +27,45 @@ enum class month_format { month_digits, month_abbrev };
  * @brief A structure representing the components of a datetime.
  */
 struct datetime_struct {
-    int year;             /**< The year component of the datetime. */
-    unsigned char month;  /**< The month component of the datetime. */
-    unsigned char day;    /**< The day component of the datetime. */
-    unsigned char hour;   /**< The hour component of the datetime. */
-    unsigned char minute; /**< The minute component of the datetime. */
-    int second;           /**< The second component of the datetime. */
-    int microsecond;      /**< The microsecond component of the datetime. */
+    unsigned char month : 4;       /**< The month component of the datetime. */
+    unsigned char day : 5;         /**< The day component of the datetime. */
+    unsigned char hour : 5;        /**< The hour component of the datetime. */
+    unsigned char minute : 6;      /**< The minute component of the datetime. */
+    unsigned char second : 6;      /**< The second component of the datetime. */
+    unsigned int microsecond : 20; /**< The microsecond component of the datetime. */
+    int year : 20;                 /**< The year component of the datetime. */
+    long long to_datetime();       /**< Converts the datetime components to datetime data. */
+};
 
-    long long to_datetime();
+/**
+ * @brief Enumeration representing common time zones and their offsets from UTC.
+ *
+ * This enum provides a set of commonly used time zones along with their
+ * corresponding offsets in hours from UTC (Coordinated Universal Time).
+ */
+enum class common_timezones : int {
+    UTC = 0,  /**< Coordinated Universal Time (UTC+0). */
+    GMT = 0,  /**< Greenwich Mean Time (UTC+0). */
+    EST = -5, /**< Eastern Standard Time (UTC-5). */
+    CST = -6, /**< Central Standard Time (UTC-6). */
+    MST = -7, /**< Mountain Standard Time (UTC-7). */
+    PST = -8, /**< Pacific Standard Time (UTC-8). */
+    EDT = -4, /**< Eastern Daylight Time (UTC-4). */
+    CDT = -5, /**< Central Daylight Time (UTC-5). */
+    MDT = -6, /**< Mountain Daylight Time (UTC-6). */
+    PDT = -7, /**< Pacific Daylight Time (UTC-7). */
+    BST = 1,  /**< British Summer Time (UTC+1). */
+    CEST = 2, /**< Central European Summer Time (UTC+2). */
+    EEST = 3, /**< Eastern European Summer Time (UTC+3). */
+    MSK = 3,  /**< Moscow Standard Time (UTC+3). */
+    JST = 9,  /**< Japan Standard Time (UTC+9). */
+    BRT = -3, /**< Brasilia Time (UTC-3). */
 };
 
 /**
  * @brief A class representing a datetime.
  * Holds the microseconds count since epoch in UTC+0
+ * This structure is meant to be simple it does not hold timezone information nor daylight saving information.
  */
 struct datetime {
     long long data; /**< The internal representation of the datetime. */
@@ -116,14 +141,16 @@ struct datetime {
     /**
      * @brief Converts the datetime to the specified timezone.
      * @param timezone The timezone to convert the datetime to.
+     * @note Datetime does not hold UTC information, so this function would only apply an offset regarding UTC+0
+     * so the datetime will be converted but will not hold the timezone information meaning if you call that again it will convert it again.
      */
-    void to_timezone(const char *timezone);
+    inline void to_timezone(common_timezones timezone) { this->add_hours(static_cast<int>(timezone)); }
 
     /**
      * @brief Converts a datetime_pack structure to a datetime.
      * @param pack The datetime_pack structure containing the components of the datetime.
      */
-    inline void from_pack(datetime_struct &pack) {
+    inline void from_pack(const datetime_struct &pack) {
         *this = datetime(pack.day, pack.month, pack.year, pack.hour, pack.minute, pack.second, pack.microsecond);
     }
 
@@ -243,94 +270,94 @@ struct datetime {
 
     /**
      * @brief Returns a datetime object representing the end of the month.
-     * 
+     *
      * This function calculates and returns a datetime object that corresponds
      * to the last moment (23:59:59) of the last day of the current month.
-     * 
+     *
      * @return datetime The datetime object representing the end of the month.
      */
     datetime end_of_the_month() const;
 
     /**
      * @brief Returns the datetime representing the beginning of the month.
-     * 
+     *
      * This function calculates and returns a datetime object that corresponds
      * to the first day of the current month at 00:00:00.
-     * 
+     *
      * @return datetime The datetime object representing the beginning of the month.
      */
     datetime begin_of_the_month() const;
 
     /**
      * @brief Returns the datetime representing the beginning of the month.
-     * 
+     *
      * This function calculates and returns a datetime object that corresponds
      * to the first day of the current month at 00:00:00.
-     * 
+     *
      * @return datetime The datetime object representing the beginning of the month.
      */
     datetime end_of_the_year() const;
 
     /**
      * @brief Returns the datetime representing the beginning of the year.
-     * 
+     *
      * This function calculates and returns the datetime object that corresponds
      * to the first moment of the first day of the current year.
-     * 
+     *
      * @return datetime The datetime object representing the beginning of the year.
      */
     datetime begin_of_the_year() const;
-    
+
     /**
      * @brief Returns the datetime representing the end of the week.
-     * 
+     *
      * This function calculates and returns the datetime object that corresponds
      * to the end of the current week. The end of the week is typically considered
      * to be the last moment of Sunday (23:59:59).
-     * 
+     *
      * @return datetime The datetime object representing the end of the week.
      */
     datetime end_of_the_week() const;
 
     /**
      * @brief Returns the datetime representing the beginning of the week.
-     * 
+     *
      * This function calculates and returns the datetime object that corresponds
      * to the beginning of the current week. The beginning of the week is typically
      * considered to be the first moment of Monday (00:00:00).
-     * 
+     *
      * @return datetime The datetime object representing the beginning of the week.
      */
     datetime begin_of_the_week() const;
 
     /**
      * @brief Returns the datetime representing the beginning of the day.
-     * 
+     *
      * This function calculates and returns the datetime object that corresponds
      * to the beginning of the current day. The beginning of the day is typically
      * considered to be the first moment of the day (00:00:00).
-     * 
+     *
      * @return datetime The datetime object representing the beginning of the day.
      */
     datetime begin_of_the_day() const;
 
     /**
      * @brief Returns the datetime representing the end of the day.
-     * 
+     *
      * This function calculates and returns the datetime object that corresponds
      * to the end of the current day. The end of the day is typically considered
      * to be the last moment of the day (23:59:59).
-     * 
+     *
      * @return datetime The datetime object representing the end of the day.
      */
     datetime end_of_the_day() const;
 
     /**
      * @brief Checks if the datetime is on a different day than the given datetime.
-     * 
+     *
      * This function compares the current datetime object with another datetime object
      * to determine if they represent different days.
-     * 
+     *
      * @param other The datetime object to compare with.
      * @return True if the datetimes are on different days, false otherwise.
      */
@@ -338,10 +365,10 @@ struct datetime {
 
     /**
      * @brief Checks if the datetime is in a different month than the given datetime.
-     * 
+     *
      * This function compares the current datetime object with another datetime object
      * to determine if they represent different months.
-     * 
+     *
      * @param other The datetime object to compare with.
      * @return True if the datetimes are in different months, false otherwise.
      */
@@ -371,60 +398,82 @@ struct datetime {
     static int day_of_week(int day, int month, int year);
 
     /**
+     * @brief Check if datetime is on leap year
+     * @return True or False whether is on leap year
+     */
+    bool leap_year();
+
+    /**
+     * @brief Computes the number of seconds cumulative in the range
+     */
+    static unsigned long long seconds_in_range(int start_year, int end_year);
+
+    /**
+     * @brief Computes the number of seconds cumulative in the range
+     */
+    static unsigned long long seconds_in_range(int start_year, int start_month, int end_year, int end_month);
+
+    /**
+     * @brief Returns the number a seconds the current month holds
+     * @return The number of seconds
+     */
+    unsigned int seconds_in_month();
+
+    /**
      * @brief Equality comparison operator.
      * @param other The datetime to compare with.
      * @return True if the datetimes are equal, false otherwise.
      */
-    inline bool operator==(datetime other) const { return data == other.data; }
+    inline constexpr bool operator==(datetime other) const { return data == other.data; }
 
     /**
      * @brief Inequality comparison operator.
      * @param other The datetime to compare with.
      * @return True if the datetimes are not equal, false otherwise.
      */
-    inline bool operator!=(datetime other) const { return data != other.data; }
+    inline constexpr bool operator!=(datetime other) const { return data != other.data; }
 
     /**
      * @brief Greater than comparison operator.
      * @param other The datetime to compare with.
      * @return True if this datetime is greater than the other datetime, false otherwise.
      */
-    inline bool operator>(datetime other) const { return data > other.data; }
+    inline constexpr bool operator>(datetime other) const { return data > other.data; }
 
     /**
      * @brief Less than comparison operator.
      * @param other The datetime to compare with.
      * @return True if this datetime is less than the other datetime, false otherwise.
      */
-    inline bool operator<(datetime other) const { return data < other.data; }
+    inline constexpr bool operator<(datetime other) const { return data < other.data; }
 
     /**
      * @brief Greater than or equal to comparison operator.
      * @param other The datetime to compare with.
      * @return True if this datetime is greater than or equal to the other datetime, false otherwise.
      */
-    inline bool operator>=(datetime other) const { return data >= other.data; }
+    inline constexpr bool operator>=(datetime other) const { return data >= other.data; }
 
     /**
      * @brief Less than or equal to comparison operator.
      * @param other The datetime to compare with.
      * @return True if this datetime is less than or equal to the other datetime, false otherwise.
      */
-    inline bool operator<=(datetime other) const { return data <= other.data; }
+    inline constexpr bool operator<=(datetime other) const { return data <= other.data; }
 
     /**
      * @brief Addition operator.
      * @param other The datetime to add.
      * @return The result of the addition.
      */
-    inline datetime operator+(datetime other) const { return data + other.data; }
+    inline constexpr datetime operator+(datetime other) const { return data + other.data; }
 
     /**
      * @brief Addition assignment operator.
      * @param other The datetime to add.
      * @return This datetime after the addition.
      */
-    inline datetime operator+=(datetime other) {
+    inline constexpr datetime operator+=(datetime other) {
         data += other.data;
         return *this;
     }
@@ -434,14 +483,14 @@ struct datetime {
      * @param other The datetime to subtract.
      * @return The result of the subtraction.
      */
-    inline datetime operator-(datetime other) const { return data - other.data; }
+    inline constexpr datetime operator-(datetime other) const { return data - other.data; }
 
     /**
      * @brief Subtraction assignment operator.
      * @param other The datetime to subtract.
      * @return This datetime after the subtraction.
      */
-    inline datetime operator-=(datetime other) {
+    inline constexpr datetime operator-=(datetime other) {
         data -= other.data;
         return *this;
     }
